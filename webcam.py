@@ -25,6 +25,16 @@ parser.add_argument("-j", "--json", help="Absolute file path to configuration js
 
 
 def putImage(token:str, fingerprint:str, img_path:pathlib.Path) -> requests.Response:
+    """Send the image to PrusaConnect
+
+    Args:
+        token (str): Camera API Token
+        fingerprint (str): The fingerprint set for the camera token (set at the time of the first use of the Camera API Token)
+        img_path (pathlib.Path): Absolute path to the photo just taken
+
+    Returns:
+        requests.Response: Response from the prusa servers
+    """
     snapshot_headers = {
         'Content-Type': 'image/jpg',
         'fingerprint': fingerprint,
@@ -41,11 +51,32 @@ def putImage(token:str, fingerprint:str, img_path:pathlib.Path) -> requests.Resp
     return resp
 
 def getPrinterStatus(ip:str, api_key:str) -> dict:
+    """Get the printer status from the PrusaLink webserver, possible statuses can be found here: https://github.com/prusa3d/Prusa-Link-Web/blob/master/spec/openapi.yaml#L1269
+
+    Args:
+        ip (str): IP Address of the printers PrusaLink web interface
+        api_key (str): PrusaLink API Key
+
+    Returns:
+        dict: Content of the HTTP request response
+    """
+
     resp = requests.get(url=f"http://{ip}/api/v1/status", headers = {"x-api-key":api_key})
     # print(resp.content.decode())
     return json.loads(resp.content)
 
 def captureImage(camera_id:int, fingerprint:str, imgs_folder:pathlib.Path) -> pathlib.Path:
+    """Take a photo with the selected webcam
+
+    Args:
+        camera_id (int): Integer of the camera as chosen by selectCamera()
+        fingerprint (str): The fingerprint set for the camera token (set at the time of the first use of the Camera API Token)
+        imgs_folder (pathlib.Path): Absolute path to the images folder where to save the images taken
+
+    Returns:
+        pathlib.Path: Absolute path to the image just taken
+    """
+
     #Capture image
     cap = cv2.VideoCapture(camera_id)
     ret, frame = cap.read()
@@ -67,6 +98,15 @@ def captureImage(camera_id:int, fingerprint:str, imgs_folder:pathlib.Path) -> pa
     return img_path
 
 def selectCamera(name:str) -> int:
+    """Run at the beginning of everytime the script is run to select the correct camera
+
+    Args:
+        name (str): Name of the printer to help with debugging and identifying which script is being run
+
+    Returns:
+        int: The camera number to use with cv2.VideoCapture
+    """
+
      # Camera Selection
     camera_id = -1
     found = False
@@ -96,6 +136,13 @@ def selectCamera(name:str) -> int:
     return camera_id
 
 def deleteImages(imgs_folder:pathlib.Path,fingerprint:str, max_images:int):
+    """ Delete old images so as not to risk maxing out the storage
+
+    Args:
+        imgs_folder (pathlib.Path): Absolute path to the images folder where to save the images taken
+        fingerprint (str): The fingerprint set for the camera token (set at the time of the first use of the Camera API Token)
+        max_images (int): Max number of images allowed to be stored for this printer
+    """
     os.chdir(str(imgs_folder))
     imgs = sorted(imgs_folder.iterdir(), key = os.path.getctime)
     filtered = []
@@ -111,26 +158,11 @@ if __name__ == "__main__":
     #Argparse
     args = parser.parse_args()
 
-    #JSON args is not passed
-    if args.json is None:
-        token = args.token
-        printer_name = args.name
-        fingerprint = args.fingerprint
-        if len(fingerprint) < 16:
-            raise ValueError("Fingerprint needs to be longer than 16 characters")
-        ip = args.ip
-        pl_api_key = args.apikey
-        imgs_folder = pathlib.Path(args.directory)
-        max_images = int(args.maximages)
-        if imgs_folder.exists():
-            if imgs_folder.is_file():
-                raise FileExistsError("Images directory needs to be a folder, not a file")
-        else:
-            imgs_folder.mkdir(parents=True)
-    else:
+    #Parse json file if its given
+    if args.json is not None:
         with open(args.json) as f:
             config = json.load(f)
-            
+
         token = config["token"]
         printer_name = config["name"]
         fingerprint = config["fingerprint"]
@@ -151,6 +183,23 @@ if __name__ == "__main__":
         else:
             imgs_folder.mkdir(parents=True)
 
+    #JSON args is not passed
+    else:
+        token = args.token
+        printer_name = args.name
+        fingerprint = args.fingerprint
+        if len(fingerprint) < 16:
+            raise ValueError("Fingerprint needs to be longer than 16 characters")
+        ip = args.ip
+        pl_api_key = args.apikey
+        imgs_folder = pathlib.Path(args.directory)
+        max_images = int(args.maximages)
+        if imgs_folder.exists():
+            if imgs_folder.is_file():
+                raise FileExistsError("Images directory needs to be a folder, not a file")
+        else:
+            imgs_folder.mkdir(parents=True)
+    
     
     #Select Camera
     camera_id = selectCamera(printer_name)
