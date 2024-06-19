@@ -6,18 +6,21 @@ import pathlib
 from PIL import Image
 import json
 import time
-import glob
+import json
 import os
 
-parser = argparse.ArgumentParser(description="Use the arguments to pass the token and camera path to the script")
+default_max_images = 500
+
+#Can either supply configuration json file
+parser = argparse.ArgumentParser(description="Use the arguments to pass the token and camera path to the script, can either use just json or the rest of them")
 parser.add_argument("-t", "--token", help="Token created by Prusa Connect")
 parser.add_argument("-n", "--name", help="Printer name to assist in debugging", default="printer")
 parser.add_argument("-f", "--fingerprint", help="Unique fingerprint >16 characters long")
 parser.add_argument("-i", "--ip", help="Local IP address of the printer to check print status")
 parser.add_argument("-k", "--apikey", help="PrusaLink API key, found on printer settings page of prusa connect")
 parser.add_argument("-d", "--directory", help="Absolute path to directory where to store images")
-parser.add_argument("-m", "--maximages", help = "Maximum number of images for this camera to store in image folder", default = 500)
-
+parser.add_argument("-m", "--maximages", help = "Maximum number of images for this camera to store in image folder", default = default_max_images)
+parser.add_argument("-j", "--json", help="Absolute file path to configuration json file", default = None)
 
 
 
@@ -107,20 +110,47 @@ def deleteImages(imgs_folder:pathlib.Path,fingerprint:str, max_images:int):
 if __name__ == "__main__":
     #Argparse
     args = parser.parse_args()
-    token = args.token
-    printer_name = args.name
-    fingerprint = args.fingerprint
-    if len(fingerprint) < 16:
-        raise ValueError("Fingerprint needs to be longer than 16 characters")
-    ip = args.ip
-    pl_api_key = args.apikey
-    imgs_folder = pathlib.Path(args.directory)
-    max_images = int(args.maximages)
-    if imgs_folder.exists():
-        if imgs_folder.is_file():
-            raise FileExistsError("Images directory needs to be a folder, not a file")
+
+    #JSON args is not passed
+    if args.json is None:
+        token = args.token
+        printer_name = args.name
+        fingerprint = args.fingerprint
+        if len(fingerprint) < 16:
+            raise ValueError("Fingerprint needs to be longer than 16 characters")
+        ip = args.ip
+        pl_api_key = args.apikey
+        imgs_folder = pathlib.Path(args.directory)
+        max_images = int(args.maximages)
+        if imgs_folder.exists():
+            if imgs_folder.is_file():
+                raise FileExistsError("Images directory needs to be a folder, not a file")
+        else:
+            imgs_folder.mkdir(parents=True)
     else:
-        imgs_folder.mkdir(parents=True)
+        with open(args.json) as f:
+            config = json.load(f)
+            
+        token = config["token"]
+        printer_name = config["name"]
+        fingerprint = config["fingerprint"]
+        if len(fingerprint) < 16:
+            raise ValueError("Fingerprint needs to be longer than 16 characters")
+        ip = config["ip"]
+        pl_api_key = config["apikey"]
+        imgs_folder = pathlib.Path(config["directory"])
+
+        try:
+            max_images = config["maximages"]
+        except KeyError:
+            max_images = default_max_images
+
+        if imgs_folder.exists():
+            if imgs_folder.is_file():
+                raise FileExistsError("Images directory needs to be a folder, not a file")
+        else:
+            imgs_folder.mkdir(parents=True)
+
     
     #Select Camera
     camera_id = selectCamera(printer_name)

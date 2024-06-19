@@ -1,0 +1,9 @@
+{
+    "token": "Your-Camera-Token-Here", 
+    "name": "Printer-Name",
+    "fingerprint": "Your-Fingerprint",
+    "ip": "192.168.xxx.xxx",
+    "apikey": "PrusaLink API Key",
+    "directory": "./imgs",
+    "maximages": 500
+}
