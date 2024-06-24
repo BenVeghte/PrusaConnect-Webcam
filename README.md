@@ -33,3 +33,4 @@ Python script to use a usb connected webcam for prusa connect camera
 ## Additional Notes
 Regardless of whether you run the script with option 1 or 2, if you run the script in a linux environment I recommend you use screen so that the script remains running even when you exit the terminal window. 
     
+There is a rotation feature incase you need or want to mount your camera upside down or rotated. Can only be done in increments of 90 degrees

@@ -21,6 +21,7 @@ parser.add_argument("-k", "--apikey", help="PrusaLink API key, found on printer 
 parser.add_argument("-d", "--directory", help="Absolute path to directory where to store images")
 parser.add_argument("-m", "--maximages", help = "Maximum number of images for this camera to store in image folder", default = default_max_images)
 parser.add_argument("-j", "--json", help="Absolute file path to configuration json file", default = None)
+parser.add_argument("-r", "--rotate", help="How much to rotate the image by, needs to be a multiple of 90, optional", default=None)
 
 
 
@@ -65,13 +66,14 @@ def getPrinterStatus(ip:str, api_key:str) -> dict:
     # print(resp.content.decode())
     return json.loads(resp.content)
 
-def captureImage(camera_id:int, fingerprint:str, imgs_folder:pathlib.Path) -> pathlib.Path:
+def captureImage(camera_id:int, fingerprint:str, imgs_folder:pathlib.Path, rotation:int) -> pathlib.Path:
     """Take a photo with the selected webcam
 
     Args:
         camera_id (int): Integer of the camera as chosen by selectCamera()
         fingerprint (str): The fingerprint set for the camera token (set at the time of the first use of the Camera API Token)
         imgs_folder (pathlib.Path): Absolute path to the images folder where to save the images taken
+        rotation (int): Input to use with cv2.rotate. Possible: None for no rotation, cv2.ROTATE_90_CLOCKWISE, cv2.ROTATE_90_COUNTERCLOCKWISE, cv2.ROTATE_180
 
     Returns:
         pathlib.Path: Absolute path to the image just taken
@@ -91,8 +93,12 @@ def captureImage(camera_id:int, fingerprint:str, imgs_folder:pathlib.Path) -> pa
     wpercent = (width / float(img.size[0]))
     hsize = int((float(img.size[1]) * float(wpercent)))
     img = img.resize((width, hsize), Image.Resampling.LANCZOS)
+    #Rotate if desired
+    if rotation is not None:
+        img = cv2.rotate(img, rotation)
+    
     img.save(str(file_name))
-
+   
     print(f"Captured and saved image: {img_path.name}")
 
     return img_path
@@ -173,6 +179,13 @@ if __name__ == "__main__":
         imgs_folder = pathlib.Path(config["directory"])
 
         try:
+            possible_rot = [None, cv2.ROTATE_90_CLOCKWISE, cv2.ROTATE_180, cv2.ROTATE_90_COUNTERCLOCKWISE]
+            image_rotation = possible_rot[config[token]/90]
+        
+        except KeyError:
+            image_rotation = None
+
+        try:
             max_images = config["maximages"]
         except KeyError:
             max_images = default_max_images
@@ -188,6 +201,8 @@ if __name__ == "__main__":
         token = args.token
         printer_name = args.name
         fingerprint = args.fingerprint
+        possible_rot = [None, cv2.ROTATE_90_CLOCKWISE, cv2.ROTATE_180, cv2.ROTATE_90_COUNTERCLOCKWISE]
+        image_rotation = possible_rot[args.rotate/90]
         if len(fingerprint) < 16:
             raise ValueError("Fingerprint needs to be longer than 16 characters")
         ip = args.ip
@@ -215,7 +230,7 @@ if __name__ == "__main__":
             status = getPrinterStatus(ip, pl_api_key)
             # print(f"Prusa Link status response: {status}")
             printer_status = status["printer"]["state"]
-            img_path = captureImage(camera_id, fingerprint, imgs_folder)
+            img_path = captureImage(camera_id, fingerprint, imgs_folder, image_rotation)
             putImage(token, fingerprint, img_path)
             time.sleep(60)
 
@@ -225,6 +240,6 @@ if __name__ == "__main__":
             status = getPrinterStatus(ip, pl_api_key)
             # print(f"Prusa Link status response: {status}")
             printer_status = status["printer"]["state"] 
-            img_path = captureImage(camera_id, fingerprint, imgs_folder)
+            img_path = captureImage(camera_id, fingerprint, imgs_folder, image_rotation)
             putImage(token, fingerprint, img_path)
             time.sleep(120)
