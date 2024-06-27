@@ -180,7 +180,12 @@ if __name__ == "__main__":
 
         try:
             possible_rot = [None, cv2.ROTATE_90_CLOCKWISE, cv2.ROTATE_180, cv2.ROTATE_90_COUNTERCLOCKWISE]
-            image_rotation = possible_rot[config[token]/90]
+            if int(config["rotate"]/90) == config["rotate"]/90:
+                rot_ind = int(config["rotate"]/90)
+                image_rotation = possible_rot[rot_ind]
+            else:
+                raise TypeError(f"User input ({config['rotate']}) is not allowed, needs to be a multiple of 90")
+            
         
         except KeyError:
             image_rotation = None
@@ -202,7 +207,18 @@ if __name__ == "__main__":
         printer_name = args.name
         fingerprint = args.fingerprint
         possible_rot = [None, cv2.ROTATE_90_CLOCKWISE, cv2.ROTATE_180, cv2.ROTATE_90_COUNTERCLOCKWISE]
-        image_rotation = possible_rot[args.rotate/90]
+
+        if int(args.rotate) == float(args.rotate):
+            if int(int(args.rotate)/90) == int(args.rotate)/90:
+                rot_ind = int(int(args.rotate)/90)
+                image_rotation = possible_rot[rot_ind]
+            else:
+                raise TypeError(f"User input ({args.rotate}) is not allowed, needs to be a multiple of 90")
+            
+
+        else:
+            raise TypeError(f"User input ({args.rotate}) is not allowed, needs to be a multiple of 90")
+        
         if len(fingerprint) < 16:
             raise ValueError("Fingerprint needs to be longer than 16 characters")
         ip = args.ip
