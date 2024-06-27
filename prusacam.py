@@ -84,20 +84,13 @@ def captureImage(camera_id:int, fingerprint:str, imgs_folder:pathlib.Path, rotat
     ret, frame = cap.read()
     file_name = f"{fingerprint}_{datetime.datetime.now().strftime('%Y-%m-%d_%H_%M_%S')}.jpg"
     img_path = imgs_folder/file_name
-    cv2.imwrite(img_path, frame)
-    cap.release()
 
-    #Resize image
-    width = 480
-    img = Image.open(img_path)
-    wpercent = (width / float(img.size[0]))
-    hsize = int((float(img.size[1]) * float(wpercent)))
-    img = img.resize((width, hsize), Image.Resampling.LANCZOS)
     #Rotate if desired
     if rotation is not None:
-        img = cv2.rotate(img, rotation)
+        frame = cv2.rotate(frame, rotation)
     
-    img.save(str(file_name))
+    cv2.imwrite(img_path, frame)
+    cap.release()
    
     print(f"Captured and saved image: {img_path.name}")
 
