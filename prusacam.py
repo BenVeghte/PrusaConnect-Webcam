@@ -21,7 +21,7 @@ parser.add_argument("-k", "--apikey", help="PrusaLink API key, found on printer 
 parser.add_argument("-d", "--directory", help="Absolute path to directory where to store images")
 parser.add_argument("-m", "--maximages", help = "Maximum number of images for this camera to store in image folder", default = default_max_images)
 parser.add_argument("-j", "--json", help="Absolute file path to configuration json file", default = None)
-parser.add_argument("-r", "--rotate", help="How much to rotate the image by, needs to be a multiple of 90, optional", default=None)
+parser.add_argument("-r", "--rotate", help="How much to rotate the image by, needs to be a multiple of 90, optional", default=0)
 
 
 
