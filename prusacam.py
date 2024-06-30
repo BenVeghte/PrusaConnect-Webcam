@@ -81,18 +81,25 @@ def captureImage(camera_id:int, fingerprint:str, imgs_folder:pathlib.Path, rotat
 
     #Capture image
     cap = cv2.VideoCapture(camera_id)
-    ret, frame = cap.read()
-    file_name = f"{fingerprint}_{datetime.datetime.now().strftime('%Y-%m-%d_%H_%M_%S')}.jpg"
-    img_path = imgs_folder/file_name
+    if cap.isOpened():
+        ret, frame = cap.read()
+        file_name = f"{fingerprint}_{datetime.datetime.now().strftime('%Y-%m-%d_%H_%M_%S')}.jpg"
+        img_path = imgs_folder/file_name
 
-    #Rotate if desired
-    if rotation is not None:
-        frame = cv2.rotate(frame, rotation)
-    
-    cv2.imwrite(img_path, frame)
-    cap.release()
+        #Rotate if desired
+        if rotation is not None:
+            frame = cv2.rotate(frame, rotation)
+        
+        cv2.imwrite(img_path, frame)
+        cap.release()
    
-    print(f"Captured and saved image: {img_path.name}")
+        print(f"Captured and saved image: {img_path.name}")
+    else:
+        print(f"Video Capture not opened at {datetime.datetime.now().strftime('%Y-%m-%d_%H_%M_%S')} ")
+        try: 
+            cap.release()
+        except:
+            pass
 
     return img_path
 
