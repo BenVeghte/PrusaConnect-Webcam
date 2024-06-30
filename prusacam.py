@@ -236,7 +236,11 @@ if __name__ == "__main__":
     while True:
         #Send updated photo every minute and check for updated printer status
         while printer_status == "PRINTING":
-            status = getPrinterStatus(ip, pl_api_key)
+            # Incase the printer loses connection which happens from time to time
+            try:
+                status = getPrinterStatus(ip, pl_api_key)
+            except: #Not specifying what error occurs here because the error tracing is vague when this occurs and if the wrong IP address is inputted it wont get through the initial status check
+                continue
             # print(f"Prusa Link status response: {status}")
             printer_status = status["printer"]["state"]
             img_path = captureImage(camera_id, fingerprint, imgs_folder, image_rotation)
@@ -246,7 +250,11 @@ if __name__ == "__main__":
         
         #Check for updated printer status and upload images every 2 minutes while printer is idling or other state (possible states can be found here: https://github.com/prusa3d/Prusa-Link-Web/blob/master/spec/openapi.yaml#L1269)
         while printer_status != "PRINTING":
-            status = getPrinterStatus(ip, pl_api_key)
+             # Incase the printer loses connection which happens from time to time
+            try:
+                status = getPrinterStatus(ip, pl_api_key)
+            except: #Not specifying what error occurs here because the error tracing is vague when this occurs and if the wrong IP address is inputted it wont get through the initial status check
+                continue
             # print(f"Prusa Link status response: {status}")
             printer_status = status["printer"]["state"] 
             img_path = captureImage(camera_id, fingerprint, imgs_folder, image_rotation)
