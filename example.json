@@ -6,5 +6,6 @@
     "apikey": "PrusaLink API Key",
     "directory": "./imgs",
     "rotate": 90,
+    "camera": "usb-046d_C270_HD_WEBCAM_3B66D360-video-index0",
     "maximages": 500
 }

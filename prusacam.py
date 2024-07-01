@@ -8,6 +8,7 @@ import json
 import time
 import json
 import os
+import CameraTester
 
 default_max_images = 500
 
@@ -22,6 +23,7 @@ parser.add_argument("-d", "--directory", help="Absolute path to directory where 
 parser.add_argument("-m", "--maximages", help = "Maximum number of images for this camera to store in image folder", default = default_max_images)
 parser.add_argument("-j", "--json", help="Absolute file path to configuration json file", default = None)
 parser.add_argument("-r", "--rotate", help="How much to rotate the image by, needs to be a multiple of 90, optional", default=0)
+parser.add_argument("-c", "--camera", help="Absolute path to the camera", default=None)
 
 
 
@@ -66,11 +68,11 @@ def getPrinterStatus(ip:str, api_key:str) -> dict:
     # print(resp.content.decode())
     return json.loads(resp.content)
 
-def captureImage(camera_id:int, fingerprint:str, imgs_folder:pathlib.Path, rotation:int) -> pathlib.Path:
+def captureImage(camera_id:int|str, fingerprint:str, imgs_folder:pathlib.Path, rotation:int) -> pathlib.Path:
     """Take a photo with the selected webcam
 
     Args:
-        camera_id (int): Integer of the camera as chosen by selectCamera()
+        camera_id (int|str): Integer of the camera as chosen by selectCamera() or the absolute path to the camera
         fingerprint (str): The fingerprint set for the camera token (set at the time of the first use of the Camera API Token)
         imgs_folder (pathlib.Path): Absolute path to the images folder where to save the images taken
         rotation (int): Input to use with cv2.rotate. Possible: None for no rotation, cv2.ROTATE_90_CLOCKWISE, cv2.ROTATE_90_COUNTERCLOCKWISE, cv2.ROTATE_180
@@ -83,24 +85,24 @@ def captureImage(camera_id:int, fingerprint:str, imgs_folder:pathlib.Path, rotat
     cap = cv2.VideoCapture(camera_id)
     if cap.isOpened():
         ret, frame = cap.read()
-        file_name = f"{fingerprint}_{datetime.datetime.now().strftime('%Y-%m-%d_%H_%M_%S')}.jpg"
-        img_path = imgs_folder/file_name
+        if ret == True:
+            file_name = f"{fingerprint}_{datetime.datetime.now().strftime('%Y-%m-%d_%H_%M_%S')}.jpg"
+            img_path = imgs_folder/file_name
 
-        #Rotate if desired
-        if rotation is not None:
-            frame = cv2.rotate(frame, rotation)
-        
-        cv2.imwrite(img_path, frame)
-        cap.release()
-   
+            #Rotate if desired
+            if rotation is not None:
+                frame = cv2.rotate(frame, rotation)
+            
+            cv2.imwrite(img_path, frame)
         print(f"Captured and saved image: {img_path.name}")
     else:
-        print(f"Video Capture not opened at {datetime.datetime.now().strftime('%Y-%m-%d_%H_%M_%S')} ")
+        print(f"Video Capture not opened at {datetime.datetime.now().strftime('%Y-%m-%d_%H_%M_%S')} ")  
         
-        try: 
-            cap.release()
-        except:
-            pass
+
+    try: 
+        cap.release()
+    except:
+        pass
 
         return None
 
@@ -167,7 +169,7 @@ if __name__ == "__main__":
     #Argparse
     args = parser.parse_args()
 
-    #Parse json file if its given
+    ##Parse json file if its given
     if args.json is not None:
         with open(args.json) as f:
             config = json.load(f)
@@ -188,23 +190,35 @@ if __name__ == "__main__":
                 image_rotation = possible_rot[rot_ind]
             else:
                 raise TypeError(f"User input ({config['rotate']}) is not allowed, needs to be a multiple of 90")
-            
-        
         except KeyError:
             image_rotation = None
 
+        #Max Images
         try:
             max_images = config["maximages"]
         except KeyError:
             max_images = default_max_images
 
+        #Image Folder
         if imgs_folder.exists():
             if imgs_folder.is_file():
                 raise FileExistsError("Images directory needs to be a folder, not a file")
         else:
             imgs_folder.mkdir(parents=True)
 
-    #JSON args is not passed
+        #Select Camera
+        try:
+            camera_id = config["camera"]
+            ret = CameraTester.verifyCamera(camera_id)
+            if ret is False:
+                raise ConnectionError("Argument supplied camera path is invalid, please select the camera manually by not passing in argument to -c or --camera or try a different absolute path. \n Sometimes cameras create multiple v4l devices so try other indicies (see readme)")
+            else:
+                camera_id = "/dev/v4l/by-id/" + camera_id
+        except KeyError:
+            camera_id = selectCamera(printer_name)
+
+
+    ##JSON args is not passed
     else:
         token = args.token
         printer_name = args.name
@@ -233,10 +247,16 @@ if __name__ == "__main__":
                 raise FileExistsError("Images directory needs to be a folder, not a file")
         else:
             imgs_folder.mkdir(parents=True)
+
+        #Select Camera
+        if args.camera is None:
+            camera_id = selectCamera(printer_name)
+        else:
+            camera_id = args.camera
+            ret = CameraTester.verifyCamera(camera_id)
+            if ret is False:
+                raise ConnectionError("Argument supplied camera path is invalid, please select the camera manually by not passing in argument to -c or --camera or try a different absolute path. \n Sometimes cameras create multiple v4l devices so try other indicies (see readme)")
     
-    
-    #Select Camera
-    camera_id = selectCamera(printer_name)
 
     #Infinite loop to get photos, and check printer status
     status = getPrinterStatus(ip, pl_api_key)

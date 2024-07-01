@@ -16,6 +16,12 @@ Python script to use a usb connected webcam for prusa connect camera
 
     If you are running this script for multiple printers on the same computer, you can have one folder for each printer or one photo for all printers. The delete functionality only deletes photos associated with the printer the script is running for. 
 
+- (Optional, but recommended, only works on linux) Identify which camera you want to use
+
+    I have only tested this on Ubuntu 24 so no promises on any other OSs
+    1. Run `python CameraTester.py`
+        This will take a photo with all connected cameras and save it to the directory you ran the command from. Took at each image and see which one you want. The file name name will be what you pass into `prusacam.py` (minus the file extension)
+
 - Option 1 (recommended): Create the JSON config file to run the script. 
     
     1. Use `example.json` as a template replacing the data with what you collected above
@@ -25,12 +31,14 @@ Python script to use a usb connected webcam for prusa connect camera
     1. Run the script with the following command:
     
      ```
-     python prusacam.py -t Your-Token -n Printer-Name -f Your-Fingerprint -i "192.168.XXX.XXX" -k PrusaLink-API-Key -d "absolute path to imgs folder" -m 1000
+     python prusacam.py -t Your-Token -n Printer-Name -f Your-Fingerprint -i "192.168.XXX.XXX" -k PrusaLink-API-Key -d "absolute path to imgs folder" -m 1000 -c "usb-046d_C270_HD_WEBCAM_3B66D360-video-index0"
      ```
 
-    This is not the recommended method because its just a long command and might be harder to manage
+    This is not the recommended method because its just a long command and a slight pain to make sure everything is right
 
 ## Additional Notes
+Passing the `-c` or `--camera` argument only works on linux
+
 Regardless of whether you run the script with option 1 or 2, if you run the script in a linux environment I recommend you use screen so that the script remains running even when you exit the terminal window. 
     
 There is a rotation feature incase you need or want to mount your camera upside down or rotated. Can only be done in increments of 90 degrees
