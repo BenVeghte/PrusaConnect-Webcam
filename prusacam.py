@@ -96,10 +96,13 @@ def captureImage(camera_id:int, fingerprint:str, imgs_folder:pathlib.Path, rotat
         print(f"Captured and saved image: {img_path.name}")
     else:
         print(f"Video Capture not opened at {datetime.datetime.now().strftime('%Y-%m-%d_%H_%M_%S')} ")
+        
         try: 
             cap.release()
         except:
             pass
+
+        return None
 
     return img_path
 
@@ -251,7 +254,8 @@ if __name__ == "__main__":
             # print(f"Prusa Link status response: {status}")
             printer_status = status["printer"]["state"]
             img_path = captureImage(camera_id, fingerprint, imgs_folder, image_rotation)
-            putImage(token, fingerprint, img_path)
+            if img_path is not None:
+                putImage(token, fingerprint, img_path)
             time.sleep(60)
 
         
@@ -265,5 +269,6 @@ if __name__ == "__main__":
             # print(f"Prusa Link status response: {status}")
             printer_status = status["printer"]["state"] 
             img_path = captureImage(camera_id, fingerprint, imgs_folder, image_rotation)
-            putImage(token, fingerprint, img_path)
+            if img_path is not None:
+                putImage(token, fingerprint, img_path)
             time.sleep(120)
