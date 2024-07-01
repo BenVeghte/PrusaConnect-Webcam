@@ -29,7 +29,7 @@ def allCameraSnapshot():
     result = subprocess.run(["ls", "/dev/v4l/by-id/"], stdout=subprocess.PIPE).stdout.decode('utf-8').replace('\n', ' ')
     v4l_devices = result.strip().split(' ')
     for camera_id in v4l_devices:
-        camera_path = "/dev/v4l/by-id" + camera_id
+        camera_path = "/dev/v4l/by-id/" + camera_id
         cap = cv2.VideoCapture(camera_path)
         if cap.isOpened():
             ret, frame = cap.read()
