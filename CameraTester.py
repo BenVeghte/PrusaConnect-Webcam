@@ -12,7 +12,7 @@ def verifyCamera(camera_id:str) -> bool:
     Returns:
         bool: Returns whether the camera is valid or not
     """
-    camera_path = "/dev/v4l/by-id" + camera_id
+    camera_path = "/dev/v4l/by-id/" + camera_id
 
     cap = cv2.VideoCapture(camera_path)
     if cap.isOpened():
