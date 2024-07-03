@@ -58,6 +58,8 @@ venv/bin/python prusacam.py -j Printer3.json &
 
 ## Additional Notes
 
+All output from the script gets saved to a file using the python `logging` library which sends it to a file `{printer name from configuration file or script arguments}.log`
+
 Any commands I reference in this were tested on Ubuntu 24.04 LTS in bash. If you are doing this in another shell or OS, you might have to tweak the commands slightly, especially the ones where the proper libraries are installed
 
 Passing the `-c` or `--camera` argument only works on linux
@@ -77,7 +79,7 @@ Run `sudo apt-get install ffmpeg libsm6 libxext6` in your terminal to install th
 
 **Images not appearing in PrusaConnect**
 
-The most likely cause is that the computer you are running this on can't connect to your network. Check the log file, which can be found in with the name `{printer name from configuration file or script arguments}.log`.
+The most likely cause is that the computer you are running this on can't connect to your network. Check the log file, which can be found with the name `{printer name from configuration file or script arguments}.log` for example `Printer1.log`.
 
 `prusacam.py` will not exit out with an error if prusalink or prusaconnect requests get timed out as my Raspberry Pi occasionally randomly disconnects from the network and I didn't want to have to worry about restarting it every time there was a `requests.exceptions.ConnectTimeout` error. 
 
