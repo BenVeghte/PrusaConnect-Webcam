@@ -55,11 +55,11 @@ def putImage(token:str, fingerprint:str, img_path:pathlib.Path) -> requests.Resp
     
     try:
         resp = requests.put(url=URL, headers=snapshot_headers, data = image)
-        if resp.status_code == 204: #Successful upload of image
+        if resp.status_code == 200: #Successful upload of image
             logging.debug(f"{img_path.name} uploaded successfully")
         
         else:
-            logging.critical(f"Put Image: Response Code {resp.status_code}. Content: {resp.content.decode()}")
+            logging.exception(f"Put Image: Response Code {resp.status_code}. Content: {resp.content.decode()}")
             raise ConnectionError(f"Put Image: Response Code {resp.status_code}. Content: {resp.content.decode()}") 
 
         return resp
@@ -89,7 +89,7 @@ def getPrinterStatus(ip:str, api_key:str) -> dict:
             return json.loads(resp.content)
 
         else:
-            logging.critical(f"Printer Status: Response Code {resp.status_code}. Content: {resp.content.decode()}")
+            logging.exception(f"Printer Status: Response Code {resp.status_code}. Content: {resp.content.decode()}")
             raise ConnectionError(f"Printer Status: Response Code {resp.status_code}. Content: {resp.content.decode()}") 
 
     except requests.exceptions.ConnectTimeout:
@@ -201,12 +201,12 @@ if __name__ == "__main__":
             config = json.load(f)
 
         printer_name = config["name"]
-        logging.basicConfig(level=logging.DEBUG, filename=f'log/{printer_name}.json', filemode='a', format='%(asctime)s %(levelname)s:%(message)s', datefmt=TIMESTAMP_FMT)
+        logging.basicConfig(level=logging.DEBUG, filename=f'{printer_name}.log', filemode='a', format='%(asctime)s %(levelname)s:%(message)s', datefmt=TIMESTAMP_FMT)
         token = config["token"]
         
         fingerprint = config["fingerprint"]
         if len(fingerprint) < 16:
-            logging.critical("JSON Input: Fingerprint needs to be longer than 16 characters")
+            logging.exception("JSON Input: Fingerprint needs to be longer than 16 characters")
             raise ValueError("Fingerprint needs to be longer than 16 characters")
         ip = config["ip"]
         pl_api_key = config["apikey"]
@@ -218,7 +218,7 @@ if __name__ == "__main__":
                 rot_ind = int(config["rotate"]/90)
                 image_rotation = possible_rot[rot_ind]
             else:
-                logging.critical("JSON Input: User input with rotate needs to be a muliple of 90 degrees")
+                logging.exception("JSON Input: User input with rotate needs to be a muliple of 90 degrees")
                 raise TypeError(f"User input ({config['rotate']}) is not allowed, needs to be a multiple of 90")
         except KeyError:
             image_rotation = None
@@ -232,7 +232,7 @@ if __name__ == "__main__":
         #Image Folder
         if imgs_folder.exists():
             if imgs_folder.is_file():
-                logging.critical("JSON Input: directory value already exists as a file, needs to be a folder")
+                logging.exception("JSON Input: directory value already exists as a file, needs to be a folder")
                 raise FileExistsError("Directory input already exists as a file, needs to be a folder")
         else:
             imgs_folder.mkdir(parents=True)
@@ -242,7 +242,7 @@ if __name__ == "__main__":
             camera_id = config["camera"]
             ret = CameraTester.verifyCamera(camera_id)
             if ret is False:
-                logging.critical("JSON Input: Camera path provided could not be verified")
+                logging.exception("JSON Input: Camera path provided could not be verified")
                 raise ConnectionError("Argument supplied camera path is invalid, please select the camera manually by not passing in argument to -c or --camera or try a different absolute path. \n Sometimes cameras create multiple v4l devices so try other indicies (see readme)")
             else:
                 camera_id = "/dev/v4l/by-id/" + camera_id
@@ -253,7 +253,7 @@ if __name__ == "__main__":
     ##JSON args is not passed
     else:
         printer_name = args.name
-        logging.basicConfig(level=logging.DEBUG, filename=f'log/{printer_name}.json', filemode='a', format='%(asctime)s %(levelname)s:%(message)s', datefmt='%m/%d/%Y %H:%M:%S')
+        logging.basicConfig(level=logging.DEBUG, filename=f'log/{printer_name}.log', filemode='a', format='%(asctime)s %(levelname)s:%(message)s', datefmt='%m/%d/%Y %H:%M:%S')
 
         token = args.token
         fingerprint = args.fingerprint
@@ -264,16 +264,16 @@ if __name__ == "__main__":
                 rot_ind = int(int(args.rotate)/90)
                 image_rotation = possible_rot[rot_ind]
             else:
-                logging.critical("Argument Input: directory value already exists as a file, needs to be a folder")
+                logging.exception("Argument Input: directory value already exists as a file, needs to be a folder")
                 raise TypeError(f"User input ({args.rotate}) is not allowed, needs to be a multiple of 90")
             
 
         else:
-            logging.critical("Argument Input: User input with rotate needs to be a muliple of 90 degrees")
+            logging.exception("Argument Input: User input with rotate needs to be a muliple of 90 degrees")
             raise TypeError(f"User input ({args.rotate}) is not allowed, needs to be a multiple of 90")
         
         if len(fingerprint) < 16:
-            logging.critical("Argument Input: Fingerprint needs to be longer than 16 characters")
+            logging.exception("Argument Input: Fingerprint needs to be longer than 16 characters")
             raise ValueError("Fingerprint needs to be longer than 16 characters")
         
         ip = args.ip
@@ -282,7 +282,7 @@ if __name__ == "__main__":
         max_images = int(args.maximages)
         if imgs_folder.exists():
             if imgs_folder.is_file():
-                logging.critical("Argument Input: directory value already exists as a file, needs to be a folder")
+                logging.exception("Argument Input: directory value already exists as a file, needs to be a folder")
                 raise FileExistsError("Directory input already exists as a file, needs to be a folder")
         else:
             imgs_folder.mkdir(parents=True)
@@ -294,7 +294,7 @@ if __name__ == "__main__":
             camera_id = args.camera
             ret = CameraTester.verifyCamera(camera_id)
             if ret is False:
-                logging.critical("JSON Input: Camera path provided could not be verified")
+                logging.exception("JSON Input: Camera path provided could not be verified")
                 raise ConnectionError("Argument supplied camera path is invalid, please select the camera manually by not passing in argument to -c or --camera or try a different absolute path. \n Sometimes cameras create multiple v4l devices so try other indicies (see readme)")
     
 
