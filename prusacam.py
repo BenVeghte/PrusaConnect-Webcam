@@ -127,7 +127,7 @@ def captureImage(camera_id:int|str, fingerprint:str, imgs_folder:pathlib.Path, r
                 frame = cv2.rotate(frame, rotation)
             
             cv2.imwrite(img_path, frame)
-        logger.info(f"Saved image {img_path.name}")
+        logger.debug(f"Saved image {img_path.name}")
     else:
         logger.warn(f"Unable to open video capture {camera_id}")
         
