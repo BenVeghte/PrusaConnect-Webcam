@@ -14,6 +14,10 @@ import CameraTester
 DEFAULT_MAX_IMAGES = 500
 TIMESTAMP_FMT = '%Y-%m-%d_%H_%M_%S'
 
+logger = logging.getLogger("prusacam")
+logger.setLevel(logging.DEBUG)
+
+
 
 #Can either supply configuration json file
 parser = argparse.ArgumentParser(description="Use the arguments to pass the token and camera path to the script, can either use just json or the rest of them")
@@ -56,16 +60,16 @@ def putImage(token:str, fingerprint:str, img_path:pathlib.Path) -> requests.Resp
     try:
         resp = requests.put(url=URL, headers=snapshot_headers, data = image)
         if resp.status_code == 200: #Successful upload of image
-            logging.debug(f"{img_path.name} uploaded successfully")
+            logger.debug(f"{img_path.name} uploaded successfully")
         
         else:
-            logging.exception(f"Put Image: Response Code {resp.status_code}. Content: {resp.content.decode()}")
+            logger.exception(f"Put Image: Response Code {resp.status_code}. Content: {resp.content.decode()}")
             raise ConnectionError(f"Put Image: Response Code {resp.status_code}. Content: {resp.content.decode()}") 
 
         return resp
        
     except requests.exceptions.ConnectTimeout:
-        logging.warn("Put Image: Connection Timeout. Meaning {URL} could not be accessed")
+        logger.warn("Put Image: Connection Timeout. Meaning {URL} could not be accessed")
         return None
     
 
@@ -89,11 +93,11 @@ def getPrinterStatus(ip:str, api_key:str) -> dict:
             return json.loads(resp.content)
 
         else:
-            logging.exception(f"Printer Status: Response Code {resp.status_code}. Content: {resp.content.decode()}")
+            logger.exception(f"Printer Status: Response Code {resp.status_code}. Content: {resp.content.decode()}")
             raise ConnectionError(f"Printer Status: Response Code {resp.status_code}. Content: {resp.content.decode()}") 
 
     except requests.exceptions.ConnectTimeout:
-        logging.warn(f"Printer status check timeout. IP: {ip}")
+        logger.warn(f"Printer status check timeout. IP: {ip}")
         return None
 
 
@@ -123,9 +127,9 @@ def captureImage(camera_id:int|str, fingerprint:str, imgs_folder:pathlib.Path, r
                 frame = cv2.rotate(frame, rotation)
             
             cv2.imwrite(img_path, frame)
-        logging.info(f"Saved image {img_path.name}")
+        logger.info(f"Saved image {img_path.name}")
     else:
-        logging.warn(f"Unable to open video capture {camera_id}")
+        logger.warn(f"Unable to open video capture {camera_id}")
         
 
     try: 
@@ -188,7 +192,7 @@ def deleteImages(imgs_folder:pathlib.Path,fingerprint:str, max_images:int):
         sorted_imgs = sorted(imgs, key = lambda x: datetime.datetime.strptime(x.stem[len(fingerprint)+1:], TIMESTAMP_FMT))
         for img in sorted_imgs[:-max_images]:
             img.unlink()
-        logging.DEBUG(f"Deleted {len(imgs)-max_images} image(s)")
+        logger.DEBUG(f"Deleted {len(imgs)-max_images} image(s)")
 
 
 if __name__ == "__main__":
@@ -201,7 +205,12 @@ if __name__ == "__main__":
             config = json.load(f)
 
         printer_name = config["name"]
-        logging.basicConfig(level=logging.DEBUG, filename=f'{printer_name}.log', filemode='a', format='%(asctime)s %(levelname)s:%(message)s', datefmt=TIMESTAMP_FMT)
+        fh = logging.FileHandler(f"{printer_name}")
+        fh.setLevel(logging.DEBUG)
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s', datefmt='%m/%d/%Y %H:%M:%S')
+        fh.setFormatter(formatter)
+        logger.addHandler(fh)
+
         token = config["token"]
         
         fingerprint = config["fingerprint"]
@@ -253,7 +262,11 @@ if __name__ == "__main__":
     ##JSON args is not passed
     else:
         printer_name = args.name
-        logging.basicConfig(level=logging.DEBUG, filename=f'log/{printer_name}.log', filemode='a', format='%(asctime)s %(levelname)s:%(message)s', datefmt='%m/%d/%Y %H:%M:%S')
+        fh = logging.FileHandler(f"{printer_name}")
+        fh.setLevel(logging.DEBUG)
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s', datefmt='%m/%d/%Y %H:%M:%S')
+        fh.setFormatter(formatter)
+        logger.addHandler(fh)
 
         token = args.token
         fingerprint = args.fingerprint
