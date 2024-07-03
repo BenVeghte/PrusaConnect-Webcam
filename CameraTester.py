@@ -20,7 +20,6 @@ def verifyCamera(camera_id:str) -> bool:
         cap.release()
         return ret
     else:
-        print("Video Capture was unable to be opened, this may be because another camera is actively using it")
         return False
 
 def allCameraSnapshot():
