@@ -205,7 +205,7 @@ if __name__ == "__main__":
             config = json.load(f)
 
         printer_name = config["name"]
-        fh = logging.FileHandler(f"{printer_name}")
+        fh = logging.FileHandler(f"{printer_name}.log")
         fh.setLevel(logging.DEBUG)
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s', datefmt='%m/%d/%Y %H:%M:%S')
         fh.setFormatter(formatter)
@@ -262,7 +262,7 @@ if __name__ == "__main__":
     ##JSON args is not passed
     else:
         printer_name = args.name
-        fh = logging.FileHandler(f"{printer_name}")
+        fh = logging.FileHandler(f"{printer_name}.log")
         fh.setLevel(logging.DEBUG)
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s', datefmt='%m/%d/%Y %H:%M:%S')
         fh.setFormatter(formatter)
