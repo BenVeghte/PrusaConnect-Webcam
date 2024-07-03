@@ -30,7 +30,7 @@ parser.add_argument("-c", "--camera", help="Absolute path to the camera", defaul
 
 
 
-def putImage(token:str, fingerprint:str, img_path:pathlib.Path) -> requests.Response:
+def putImage(token:str, fingerprint:str, img_path:pathlib.Path) -> requests.Response|None:
     """Send the image to PrusaConnect
 
     Args:
@@ -40,6 +40,7 @@ def putImage(token:str, fingerprint:str, img_path:pathlib.Path) -> requests.Resp
 
     Returns:
         requests.Response: Response from the prusa servers
+        None: If the servers cannot be reached, return none
     """
     snapshot_headers = {
         'Content-Type': 'image/jpg',
@@ -52,9 +53,21 @@ def putImage(token:str, fingerprint:str, img_path:pathlib.Path) -> requests.Resp
     with img_path.open(mode='rb') as f:
         image = f.read()
     
-    resp = requests.put(url=URL, headers=snapshot_headers, data = image)
+    try:
+        resp = requests.put(url=URL, headers=snapshot_headers, data = image)
+        if resp.status_code == 204: #Successful upload of image
+            logging.debug(f"{img_path.name} uploaded successfully")
+        
+        else:
+            logging.critical(f"Put Image: Response Code {resp.status_code}. Content: {resp.content.decode()}")
+            raise ConnectionError(f"Put Image: Response Code {resp.status_code}. Content: {resp.content.decode()}") 
 
-    return resp
+        return resp
+       
+    except requests.exceptions.ConnectTimeout:
+        logging.warn("Put Image: Connection Timeout. Meaning {URL} could not be accessed")
+        return None
+    
 
 def getPrinterStatus(ip:str, api_key:str) -> dict:
     """Get the printer status from the PrusaLink webserver, possible statuses can be found here: https://github.com/prusa3d/Prusa-Link-Web/blob/master/spec/openapi.yaml#L1269
@@ -65,11 +78,24 @@ def getPrinterStatus(ip:str, api_key:str) -> dict:
 
     Returns:
         dict: Content of the HTTP request response
+        None: If the connection times out, returns None instead
     """
 
-    resp = requests.get(url=f"http://{ip}/api/v1/status", headers = {"x-api-key":api_key})
-    # print(resp.content.decode())
-    return json.loads(resp.content)
+    try:
+        resp = requests.get(url=f"http://{ip}/api/v1/status", headers = {"x-api-key":api_key})
+
+        #See https://github.com/prusa3d/Prusa-Link-Web/blob/master/spec/openapi.yaml#L43 for info about status codes and response format
+        if resp.status_code == 200:
+            return json.loads(resp.content)
+
+        else:
+            logging.critical(f"Printer Status: Response Code {resp.status_code}. Content: {resp.content.decode()}")
+            raise ConnectionError(f"Printer Status: Response Code {resp.status_code}. Content: {resp.content.decode()}") 
+
+    except requests.exceptions.ConnectTimeout:
+        logging.warn(f"Printer status check timeout. IP: {ip}")
+        return None
+
 
 def captureImage(camera_id:int|str, fingerprint:str, imgs_folder:pathlib.Path, rotation:int) -> pathlib.Path:
     """Take a photo with the selected webcam
@@ -274,34 +300,32 @@ if __name__ == "__main__":
 
     #Infinite loop to get photos, and check printer status
     status = getPrinterStatus(ip, pl_api_key)
-    # print(f"Prusa Link status response: {status}")
-    printer_status = status["printer"]["state"]
+    if status is None: #Means the software couldn't connect to the printer
+        printer_status = "IDLE"
+    else:
+        printer_status = status["printer"]["state"]
+    
 
     while True:
-        #Send updated photo every minute and check for updated printer status
+        # Possible printer statuses can be found here: https://github.com/prusa3d/Prusa-Link-Web/blob/master/spec/openapi.yaml#L1269
+        #If the printer is printing
         while printer_status == "PRINTING":
-            # Incase the printer loses connection which happens from time to time
-            try:
-                status = getPrinterStatus(ip, pl_api_key)
-            except: #Not specifying what error occurs here because the error tracing is vague when this occurs and if the wrong IP address is inputted it wont get through the initial status check
-                continue
-            # print(f"Prusa Link status response: {status}")
-            printer_status = status["printer"]["state"]
+            status = getPrinterStatus(ip, pl_api_key)
+            if status is not None: #If the status check works properly change the state, otherwise do nothing
+                printer_status = status["printer"]["state"]
+
             img_path = captureImage(camera_id, fingerprint, imgs_folder, image_rotation)
-            if img_path is not None:
+            if img_path is not None: #If the image was saved properly
                 putImage(token, fingerprint, img_path)
             time.sleep(60)
 
-        
-        #Check for updated printer status and upload images every 2 minutes while printer is idling or other state (possible states can be found here: https://github.com/prusa3d/Prusa-Link-Web/blob/master/spec/openapi.yaml#L1269)
+
+        #Printer is in any other state
         while printer_status != "PRINTING":
-             # Incase the printer loses connection which happens from time to time
-            try:
-                status = getPrinterStatus(ip, pl_api_key)
-            except: #Not specifying what error occurs here because the error tracing is vague when this occurs and if the wrong IP address is inputted it wont get through the initial status check
-                continue
-            # print(f"Prusa Link status response: {status}")
-            printer_status = status["printer"]["state"] 
+            status = getPrinterStatus(ip, pl_api_key)
+            if status is not None: #If the status check works properly change the state, otherwise do nothing
+                printer_status = status["printer"]["state"]
+
             img_path = captureImage(camera_id, fingerprint, imgs_folder, image_rotation)
             if img_path is not None:
                 putImage(token, fingerprint, img_path)
