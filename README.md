@@ -1,4 +1,4 @@
-# prusaconnect-webcam
+# PrusaConnect USB Webcam
 Program to use a USB connected webcam with PrusaConnect's camera feature. If you have multiple printers, you can run multiple instances of this script with different configuration files on the same computer.
 
 
