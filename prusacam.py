@@ -11,9 +11,8 @@ import os
 import logging
 import CameraTester
 
-default_max_images = 500
-
-logging.basicConfig(level=logging.DEBUG, filename='/log/')
+DEFAULT_MAX_IMAGES = 500
+TIMESTAMP_FMT = '%Y-%m-%d_%H_%M_%S'
 
 
 #Can either supply configuration json file
@@ -24,7 +23,7 @@ parser.add_argument("-f", "--fingerprint", help="Unique fingerprint >16 characte
 parser.add_argument("-i", "--ip", help="Local IP address of the printer to check print status")
 parser.add_argument("-k", "--apikey", help="PrusaLink API key, found on printer settings page of prusa connect")
 parser.add_argument("-d", "--directory", help="Absolute path to directory where to store images")
-parser.add_argument("-m", "--maximages", help = "Maximum number of images for this camera to store in image folder", default = default_max_images)
+parser.add_argument("-m", "--maximages", help = "Maximum number of images for this camera to store in image folder", default = DEFAULT_MAX_IMAGES)
 parser.add_argument("-j", "--json", help="Absolute file path to configuration json file", default = None)
 parser.add_argument("-r", "--rotate", help="How much to rotate the image by, needs to be a multiple of 90, optional", default=0)
 parser.add_argument("-c", "--camera", help="Absolute path to the camera", default=None)
@@ -90,7 +89,7 @@ def captureImage(camera_id:int|str, fingerprint:str, imgs_folder:pathlib.Path, r
     if cap.isOpened():
         ret, frame = cap.read()
         if ret == True:
-            file_name = f"{fingerprint}_{datetime.datetime.now().strftime('%Y-%m-%d_%H_%M_%S')}.jpg"
+            file_name = f"{fingerprint}_{datetime.datetime.now().strftime(TIMESTAMP_FMT)}.jpg"
             img_path = imgs_folder/file_name
 
             #Rotate if desired
@@ -158,15 +157,12 @@ def deleteImages(imgs_folder:pathlib.Path,fingerprint:str, max_images:int):
         fingerprint (str): The fingerprint set for the camera token (set at the time of the first use of the Camera API Token)
         max_images (int): Max number of images allowed to be stored for this printer
     """
-    os.chdir(str(imgs_folder))
-    imgs = sorted(imgs_folder.iterdir(), key = os.path.getctime)
-    filtered = []
-    for img in imgs:
-        if fingerprint in str(img) and ".jpg" in str(img):
-            filtered.append(img)
-    if len(filtered)>max_images: #If there are more images than the max allowed
-        for img in filtered[0:-1*max_images]: #Deletes the oldest images until there are 500 remaining
-            os.remove(str(img))
+    imgs = list(imgs_folder.glob(f"{fingerprint}_*.jpg"))
+    if len(imgs) > max_images:
+        sorted_imgs = sorted(imgs, key = lambda x: datetime.datetime.strptime(x.stem[len(fingerprint)+1:], TIMESTAMP_FMT))
+        for img in sorted_imgs[:-max_images]:
+            img.unlink()
+        logging.DEBUG(f"Deleted {len(imgs)-max_images} image(s)")
 
 
 if __name__ == "__main__":
@@ -179,7 +175,7 @@ if __name__ == "__main__":
             config = json.load(f)
 
         printer_name = config["name"]
-        logging.basicConfig(level=logging.DEBUG, filename=f'log/{printer_name}.json', filemode='a', format='%(asctime)s %(levelname)s:%(message)s', datefmt='%m/%d/%Y %H:%M:%S')
+        logging.basicConfig(level=logging.DEBUG, filename=f'log/{printer_name}.json', filemode='a', format='%(asctime)s %(levelname)s:%(message)s', datefmt=TIMESTAMP_FMT)
         token = config["token"]
         
         fingerprint = config["fingerprint"]
@@ -205,7 +201,7 @@ if __name__ == "__main__":
         try:
             max_images = config["maximages"]
         except KeyError:
-            max_images = default_max_images
+            max_images = DEFAULT_MAX_IMAGES
 
         #Image Folder
         if imgs_folder.exists():
