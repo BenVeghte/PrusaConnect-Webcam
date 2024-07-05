@@ -320,6 +320,7 @@ if __name__ == "__main__":
     
 
     while True:
+        count = 0
         # Possible printer statuses can be found here: https://github.com/prusa3d/Prusa-Link-Web/blob/master/spec/openapi.yaml#L1269
         #If the printer is printing
         while printer_status == "PRINTING":
@@ -330,6 +331,13 @@ if __name__ == "__main__":
             img_path = captureImage(camera_id, fingerprint, imgs_folder, image_rotation)
             if img_path is not None: #If the image was saved properly
                 putImage(token, fingerprint, img_path)
+            
+            #Delete images every so often to reduce CPU load
+            count += 1
+            if count > 20:
+                count = 0
+                deleteImages(imgs_folder, fingerprint, max_images)
+                
             time.sleep(60)
 
 
@@ -342,4 +350,11 @@ if __name__ == "__main__":
             img_path = captureImage(camera_id, fingerprint, imgs_folder, image_rotation)
             if img_path is not None:
                 putImage(token, fingerprint, img_path)
+
+            #Delete images every so often to reduce CPU load
+            count += 1
+            if count > 20:
+                count = 0
+                deleteImages(imgs_folder, fingerprint, max_images)
+
             time.sleep(120)
