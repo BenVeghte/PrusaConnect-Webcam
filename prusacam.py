@@ -230,8 +230,8 @@ if __name__ == "__main__":
         
         fingerprint = config["fingerprint"]
         if len(fingerprint) < 16:
-            logging.exception("JSON Input: Fingerprint needs to be longer than 16 characters")
             raise ValueError("Fingerprint needs to be longer than 16 characters")
+        
         ip = config["ip"]
         pl_api_key = config["apikey"]
         imgs_folder = pathlib.Path(config["directory"])
@@ -242,8 +242,8 @@ if __name__ == "__main__":
                 rot_ind = int(config["rotate"]/90)
                 image_rotation = possible_rot[rot_ind]
             else:
-                logging.exception("JSON Input: User input with rotate needs to be a muliple of 90 degrees")
                 raise TypeError(f"User input ({config['rotate']}) is not allowed, needs to be a multiple of 90")
+            
         except KeyError:
             image_rotation = None
 
@@ -256,8 +256,8 @@ if __name__ == "__main__":
         #Image Folder
         if imgs_folder.exists():
             if imgs_folder.is_file():
-                logging.exception("JSON Input: directory value already exists as a file, needs to be a folder")
                 raise FileExistsError("Directory input already exists as a file, needs to be a folder")
+            
         else:
             imgs_folder.mkdir(parents=True)
 
@@ -266,8 +266,8 @@ if __name__ == "__main__":
             camera_id = config["camera"]
             ret = CameraTester.verifyCamera(camera_id)
             if ret is False:
-                logging.exception("JSON Input: Camera path provided could not be verified")
                 raise ConnectionError("Argument supplied camera path is invalid, please select the camera manually by not passing in argument to -c or --camera or try a different absolute path. \n Sometimes cameras create multiple v4l devices so try other indicies (see readme)")
+
             else:
                 camera_id = "/dev/v4l/by-id/" + camera_id
         except KeyError:
@@ -292,16 +292,13 @@ if __name__ == "__main__":
                 rot_ind = int(int(args.rotate)/90)
                 image_rotation = possible_rot[rot_ind]
             else:
-                logging.exception("Argument Input: directory value already exists as a file, needs to be a folder")
                 raise TypeError(f"User input ({args.rotate}) is not allowed, needs to be a multiple of 90")
             
 
         else:
-            logging.exception("Argument Input: User input with rotate needs to be a muliple of 90 degrees")
             raise TypeError(f"User input ({args.rotate}) is not allowed, needs to be a multiple of 90")
         
         if len(fingerprint) < 16:
-            logging.exception("Argument Input: Fingerprint needs to be longer than 16 characters")
             raise ValueError("Fingerprint needs to be longer than 16 characters")
         
         ip = args.ip
@@ -310,8 +307,8 @@ if __name__ == "__main__":
         max_images = int(args.maximages)
         if imgs_folder.exists():
             if imgs_folder.is_file():
-                logging.exception("Argument Input: directory value already exists as a file, needs to be a folder")
                 raise FileExistsError("Directory input already exists as a file, needs to be a folder")
+            
         else:
             imgs_folder.mkdir(parents=True)
 
@@ -322,7 +319,6 @@ if __name__ == "__main__":
             camera_id = args.camera
             ret = CameraTester.verifyCamera(camera_id)
             if ret is False:
-                logging.exception("JSON Input: Camera path provided could not be verified")
                 raise ConnectionError("Argument supplied camera path is invalid, please select the camera manually by not passing in argument to -c or --camera or try a different absolute path. \n Sometimes cameras create multiple v4l devices so try other indicies (see readme)")
     
 
