@@ -196,7 +196,21 @@ def deleteImages(imgs_folder:pathlib.Path,fingerprint:str, max_images:int):
         logger.debug(f"Deleted {len(imgs)-max_images} image(s)")
 
 
+def uncaughtExceptionsHandler(exc_type, exc_value, exc_traceback):
+    """Make sure all exceptions get put in the log file for easy debugging
+    """
+    if issubclass(exc_type, KeyboardInterrupt):
+        sys.__excepthook__(exc_type, exc_value, exc_traceback)
+        return
+    else:
+        logger.critical("Unhandled exception", exc_info=(exc_type, exc_value, exc_traceback))
+        sys.__excepthook__(exc_type, exc_value, exc_traceback)
+        return
+
+
 if __name__ == "__main__":
+    sys.excepthook = uncaughtExceptionsHandler
+
     #Argparse
     args = parser.parse_args()
 
@@ -338,7 +352,7 @@ if __name__ == "__main__":
             if count > 20:
                 count = 0
                 deleteImages(imgs_folder, fingerprint, max_images)
-                
+
             time.sleep(60)
 
 
