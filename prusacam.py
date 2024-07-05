@@ -9,6 +9,7 @@ import time
 import json
 import os
 import logging
+import sys
 import CameraTester
 
 DEFAULT_MAX_IMAGES = 500
@@ -192,7 +193,7 @@ def deleteImages(imgs_folder:pathlib.Path,fingerprint:str, max_images:int):
         sorted_imgs = sorted(imgs, key = lambda x: datetime.datetime.strptime(x.stem[len(fingerprint)+1:], TIMESTAMP_FMT))
         for img in sorted_imgs[:-max_images]:
             img.unlink()
-        logger.DEBUG(f"Deleted {len(imgs)-max_images} image(s)")
+        logger.debug(f"Deleted {len(imgs)-max_images} image(s)")
 
 
 if __name__ == "__main__":
