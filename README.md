@@ -88,7 +88,7 @@ To automate running of the script, I created a shell script that I made a cronjo
 
 ```bash
 #!/bin/bash
-cd /home/ubuntu/prusaconnect-webcam
+cd /home/ubuntu/PrusaConnect-Webcam
 git pull
 
 venv/bin/pip install -r requirements.txt
