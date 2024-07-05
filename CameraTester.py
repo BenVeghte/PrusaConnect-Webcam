@@ -1,46 +1,46 @@
-import cv2
-import subprocess
 import os
-import argparse
+import subprocess
+import cv2
 
-def verifyCamera(camera_id:str) -> bool:
-    """Test to see if the camera can take a photo. Occasionally a camera will have multiple v4l devices so this makes sure you have selected the right one
-
-    Args:
-        camera_id (str): Path to the camera, relative to /dev/v4l/by-id/
-
-    Returns:
-        bool: Returns whether the camera is valid or not
-    """
-    camera_path = "/dev/v4l/by-id/" + camera_id
+def verifyCamera(identifier: str | int) -> bool:
+    if os.name == "nt":  # Windows
+        camera_path = int(identifier)
+    else:  # Linux
+        camera_path = "/dev/v4l/by-id/" + str(identifier)
 
     cap = cv2.VideoCapture(camera_path)
     if cap.isOpened():
-        ret, frame = cap.read()
         cap.release()
-        return ret
+        return True
     else:
         return False
 
 def allCameraSnapshot():
-    """Takes a photo with all connected USB V4L cameras (or at least tries to) and saves them so the user can figure out which camera is pointed where
-    """
-    result = subprocess.run(["ls", "/dev/v4l/by-id/"], stdout=subprocess.PIPE).stdout.decode('utf-8').replace('\n', ' ')
-    v4l_devices = result.strip().split(' ')
-    for camera_id in v4l_devices:
-        camera_path = "/dev/v4l/by-id/" + camera_id
-        cap = cv2.VideoCapture(camera_path)
-        if cap.isOpened():
-            ret, frame = cap.read()
-            if ret == True:
-                cv2.imwrite(f"{camera_id}.jpg", frame)
-                print(camera_id)
-            
-        cap.release()
-    
-    print(f"All photos captured to {os.getcwd()}, copy the file name (minus the file extention) to the parameters of prusacam.py")
-    
-    
+    if os.name == "posix":  # Linux
+        result = subprocess.run(["ls", "/dev/v4l/by-id/"], stdout=subprocess.PIPE).stdout.decode("utf-8").replace("\n", " ")
+        v4l_devices = result.strip().split(" ")
+        for camera_id in v4l_devices:
+            camera_path = "/dev/v4l/by-id/" + camera_id
+            cap = cv2.VideoCapture(camera_path)
+            if cap.isOpened():
+                ret, frame = cap.read()
+                if ret:
+                    cv2.imwrite(f"{camera_id}.jpg", frame)
+                    print(camera_id)
+            cap.release()
+    elif os.name == "nt":  # Windows
+        for index in range(10):  # Try the first 10 indices.
+            cap = cv2.VideoCapture(index)
+            if cap.isOpened():
+                ret, frame = cap.read()
+                if ret:
+                    filename = f"camera_{index}.jpg"
+                    cv2.imwrite(filename, frame)
+                    print(f"Captured {filename}")
+                cap.release()
+
+    print(f"All photos captured to {os.getcwd()}")
+
 if __name__ == "__main__":
-    print("Taking a photo from all connected V4L cameras")
+    print("Taking a photo from all connected cameras")
     allCameraSnapshot()

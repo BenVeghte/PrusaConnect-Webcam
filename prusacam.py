@@ -1,6 +1,6 @@
 import requests
 import argparse
-import cv2 
+import cv2
 import datetime
 import pathlib
 from PIL import Image
@@ -57,22 +57,22 @@ def putImage(token:str, fingerprint:str, img_path:pathlib.Path) -> requests.Resp
 
     with img_path.open(mode='rb') as f:
         image = f.read()
-    
+
     try:
         resp = requests.put(url=URL, headers=snapshot_headers, data = image)
         if resp.status_code == 200: #Successful upload of image
             logger.debug(f"{img_path.name} uploaded successfully")
-        
+
         else:
             logger.exception(f"Put Image: Response Code {resp.status_code}. Content: {resp.content.decode()}")
-            raise ConnectionError(f"Put Image: Response Code {resp.status_code}. Content: {resp.content.decode()}") 
+            raise ConnectionError(f"Put Image: Response Code {resp.status_code}. Content: {resp.content.decode()}")
 
         return resp
-       
+
     except requests.exceptions.ConnectTimeout:
         logger.warn("Put Image: Connection Timeout. Meaning {URL} could not be accessed")
         return None
-    
+
 
 def getPrinterStatus(ip:str, api_key:str) -> dict:
     """Get the printer status from the PrusaLink webserver, possible statuses can be found here: https://github.com/prusa3d/Prusa-Link-Web/blob/master/spec/openapi.yaml#L1269
@@ -95,7 +95,7 @@ def getPrinterStatus(ip:str, api_key:str) -> dict:
 
         else:
             logger.exception(f"Printer Status: Response Code {resp.status_code}. Content: {resp.content.decode()}")
-            raise ConnectionError(f"Printer Status: Response Code {resp.status_code}. Content: {resp.content.decode()}") 
+            raise ConnectionError(f"Printer Status: Response Code {resp.status_code}. Content: {resp.content.decode()}")
 
     except requests.exceptions.ConnectTimeout:
         logger.warn(f"Printer status check timeout. IP: {ip}")
@@ -126,14 +126,14 @@ def captureImage(camera_id:int|str, fingerprint:str, imgs_folder:pathlib.Path, r
             #Rotate if desired
             if rotation is not None:
                 frame = cv2.rotate(frame, rotation)
-            
+
             cv2.imwrite(img_path, frame)
         logger.debug(f"Saved image {img_path.name}")
     else:
         logger.warn(f"Unable to open video capture {camera_id}")
-        
 
-    try: 
+
+    try:
         cap.release()
     except:
         pass
@@ -168,7 +168,7 @@ def selectCamera(name:str) -> int:
                     valid = True
                 else:
                     print("Invalid input, please try again, yes or no.")
-            
+
         cap.release()
         if camera_id != -1:
             break
@@ -227,11 +227,11 @@ if __name__ == "__main__":
         logger.addHandler(fh)
 
         token = config["token"]
-        
+
         fingerprint = config["fingerprint"]
         if len(fingerprint) < 16:
             raise ValueError("Fingerprint needs to be longer than 16 characters")
-        
+
         ip = config["ip"]
         pl_api_key = config["apikey"]
         imgs_folder = pathlib.Path(config["directory"])
@@ -243,7 +243,7 @@ if __name__ == "__main__":
                 image_rotation = possible_rot[rot_ind]
             else:
                 raise TypeError(f"User input ({config['rotate']}) is not allowed, needs to be a multiple of 90")
-            
+
         except KeyError:
             image_rotation = None
 
@@ -257,7 +257,7 @@ if __name__ == "__main__":
         if imgs_folder.exists():
             if imgs_folder.is_file():
                 raise FileExistsError("Directory input already exists as a file, needs to be a folder")
-            
+
         else:
             imgs_folder.mkdir(parents=True)
 
@@ -268,8 +268,10 @@ if __name__ == "__main__":
             if ret is False:
                 raise ConnectionError("Argument supplied camera path is invalid, please select the camera manually by not passing in argument to -c or --camera or try a different absolute path. \n Sometimes cameras create multiple v4l devices so try other indicies (see readme)")
 
-            else:
-                camera_id = "/dev/v4l/by-id/" + camera_id
+            elif os.name == "nt":  # Windows
+                camera_path = int(camera_id)
+            else:  # Linux
+                camera_path = "/dev/v4l/by-id/" + str(camera_id)
         except KeyError:
             camera_id = selectCamera(printer_name)
 
@@ -293,14 +295,14 @@ if __name__ == "__main__":
                 image_rotation = possible_rot[rot_ind]
             else:
                 raise TypeError(f"User input ({args.rotate}) is not allowed, needs to be a multiple of 90")
-            
+
 
         else:
             raise TypeError(f"User input ({args.rotate}) is not allowed, needs to be a multiple of 90")
-        
+
         if len(fingerprint) < 16:
             raise ValueError("Fingerprint needs to be longer than 16 characters")
-        
+
         ip = args.ip
         pl_api_key = args.apikey
         imgs_folder = pathlib.Path(args.directory)
@@ -308,7 +310,7 @@ if __name__ == "__main__":
         if imgs_folder.exists():
             if imgs_folder.is_file():
                 raise FileExistsError("Directory input already exists as a file, needs to be a folder")
-            
+
         else:
             imgs_folder.mkdir(parents=True)
 
@@ -320,7 +322,7 @@ if __name__ == "__main__":
             ret = CameraTester.verifyCamera(camera_id)
             if ret is False:
                 raise ConnectionError("Argument supplied camera path is invalid, please select the camera manually by not passing in argument to -c or --camera or try a different absolute path. \n Sometimes cameras create multiple v4l devices so try other indicies (see readme)")
-    
+
 
     #Infinite loop to get photos, and check printer status
     status = getPrinterStatus(ip, pl_api_key)
@@ -328,7 +330,7 @@ if __name__ == "__main__":
         printer_status = "IDLE"
     else:
         printer_status = status["printer"]["state"]
-    
+
 
     while True:
         count = 0
@@ -342,7 +344,7 @@ if __name__ == "__main__":
             img_path = captureImage(camera_id, fingerprint, imgs_folder, image_rotation)
             if img_path is not None: #If the image was saved properly
                 putImage(token, fingerprint, img_path)
-            
+
             #Delete images every so often to reduce CPU load
             count += 1
             if count > 20:
