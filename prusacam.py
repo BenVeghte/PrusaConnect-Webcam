@@ -31,7 +31,7 @@ parser.add_argument("-d", "--directory", help="Absolute path to directory where 
 parser.add_argument("-m", "--maximages", help = "Maximum number of images for this camera to store in image folder", default = DEFAULT_MAX_IMAGES)
 parser.add_argument("-j", "--json", help="Absolute file path to configuration json file", default = None)
 parser.add_argument("-r", "--rotate", help="How much to rotate the image by, needs to be a multiple of 90, optional", default=0)
-parser.add_argument("-c", "--camera", help="Absolute path to the camera", default=None)
+parser.add_argument("-s", "--sleep", help="How long to sleep between checks of the printer status", default=60)
 
 
 
@@ -236,6 +236,8 @@ if __name__ == "__main__":
         pl_api_key = config["apikey"]
         imgs_folder = pathlib.Path(config["directory"])
 
+        sleep = config["sleep"]
+
         try:
             possible_rot = [None, cv2.ROTATE_90_CLOCKWISE, cv2.ROTATE_180, cv2.ROTATE_90_COUNTERCLOCKWISE]
             if int(config["rotate"]/90) == config["rotate"]/90:
@@ -370,4 +372,4 @@ if __name__ == "__main__":
                 count = 0
                 deleteImages(imgs_folder, fingerprint, max_images)
 
-            time.sleep(120)
+            time.sleep(sleep)

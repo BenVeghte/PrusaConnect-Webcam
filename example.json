@@ -1,5 +1,5 @@
 {
-    "token": "Your-Camera-Token-Here", 
+    "token": "Your-Camera-Token-Here",
     "name": "Printer-Name",
     "fingerprint": "Your-Fingerprint",
     "ip": "192.168.xxx.xxx",
@@ -7,5 +7,6 @@
     "directory": "./imgs",
     "rotate": 90,
     "camera": "usb-046d_C270_HD_WEBCAM_3B66D360-video-index0",
-    "maximages": 500
+    "maximages": 500,
+    "sleep": 120
 }
