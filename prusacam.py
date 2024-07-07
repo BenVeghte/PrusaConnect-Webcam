@@ -7,7 +7,6 @@ from PIL import Image
 import json
 import time
 import json
-import os
 import logging
 import sys
 import CameraTester
@@ -263,13 +262,20 @@ if __name__ == "__main__":
 
         #Select Camera
         try:
-            camera_id = config["camera"]
-            ret = CameraTester.verifyCamera(camera_id)
-            if ret is False:
-                raise ConnectionError("Argument supplied camera path is invalid, please select the camera manually by not passing in argument to -c or --camera or try a different absolute path. \n Sometimes cameras create multiple v4l devices so try other indicies (see readme)")
-
+            if sys.platform == "win32":
+                camera_id = CameraTester.matchWinCamera(config["camera"])
+                ret = CameraTester.verifyCamera(camera_id)
+                if ret is False:
+                    raise ConnectionError("Argument supplied camera ID is invalid, please select the camera manually by not passing in argument to -c or --camera to ensure your camera is connected")
+                    
             else:
-                camera_id = "/dev/v4l/by-id/" + camera_id
+                camera_id = config["camera"]
+                ret = CameraTester.verifyCamera(camera_id)
+                if ret is False:
+                    raise ConnectionError("Argument supplied camera path is invalid, please select the camera manually by not passing in argument to -c or --camera or try a different absolute path. \n Sometimes cameras create multiple v4l devices so try other indicies (see readme)")
+
+                else:
+                    camera_id = "/dev/v4l/by-id/" + camera_id
         except KeyError:
             camera_id = selectCamera(printer_name)
 
