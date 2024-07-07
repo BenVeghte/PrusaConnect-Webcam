@@ -116,31 +116,28 @@ def captureImage(camera_id:int|str, fingerprint:str, imgs_folder:pathlib.Path, r
     """
 
     #Capture image
-    cap = cv2.VideoCapture(camera_id)
-    if cap.isOpened():
-        ret, frame = cap.read()
-        if ret == True:
-            file_name = f"{fingerprint}_{datetime.datetime.now().strftime(TIMESTAMP_FMT)}.jpg"
-            img_path = imgs_folder/file_name
+    try:
+        cap = cv2.VideoCapture(camera_id)
+        if cap.isOpened():
+            ret, frame = cap.read()
+            if ret == True:
+                file_name = f"{fingerprint}_{datetime.datetime.now().strftime(TIMESTAMP_FMT)}.jpg"
+                img_path = imgs_folder/file_name
 
-            #Rotate if desired
-            if rotation is not None:
-                frame = cv2.rotate(frame, rotation)
-            
-            cv2.imwrite(img_path, frame)
-        logger.debug(f"Saved image {img_path.name}")
-    else:
-        logger.warn(f"Unable to open video capture {camera_id}")
-        
+                #Rotate if desired
+                if rotation is not None:
+                    frame = cv2.rotate(frame, rotation)
+                
+                cv2.imwrite(img_path, frame)
+            logger.debug(f"Saved image {img_path.name}")
+            cap.release()
+            return img_path
+        else:
+            logger.warn(f"Unable to open video capture {camera_id}")
 
-    try: 
-        cap.release()
-    except:
-        pass
-
+    except UnboundLocalError: # Cant 
         return None
 
-    return img_path
 
 def selectCamera(name:str) -> int:
     """Run at the beginning of everytime the script is run to select the correct camera
