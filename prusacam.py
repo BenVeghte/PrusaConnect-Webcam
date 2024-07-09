@@ -73,6 +73,9 @@ def putImage(token:str, fingerprint:str, img_path:pathlib.Path) -> requests.Resp
         logger.warn("Put Image: Connection Timeout. Meaning {URL} could not be accessed")
         return None
     
+    except ConnectionRefusedError:
+        logger.warn("Put Image: Connection Error. Meaning {URL} could not be accessed")
+        return None
 
 def getPrinterStatus(ip:str, api_key:str) -> dict:
     """Get the printer status from the PrusaLink webserver, possible statuses can be found here: https://github.com/prusa3d/Prusa-Link-Web/blob/master/spec/openapi.yaml#L1269
