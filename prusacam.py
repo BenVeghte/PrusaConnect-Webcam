@@ -105,6 +105,8 @@ def getPrinterStatus(ip:str, api_key:str) -> dict:
     except requests.exceptions.ConnectTimeout:
         logger.warn(f"Printer status check timeout. IP: {ip}")
         return None
+    except OSError:
+        logger.warn("Get Printer Status: OSError. Network likely unreachable")
 
 
 def captureImage(camera_id:int|str, fingerprint:str, imgs_folder:pathlib.Path, rotation:int) -> pathlib.Path:
