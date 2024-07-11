@@ -70,9 +70,14 @@ def putImage(token:str, fingerprint:str, img_path:pathlib.Path) -> requests.Resp
         return resp
        
     except requests.exceptions.ConnectTimeout:
-        logger.warn("Put Image: Connection Timeout. Meaning {URL} could not be accessed")
+        logger.warn(f"Put Image: Connection Timeout. Meaning {URL} could not be accessed")
         return None
     
+    except ConnectionRefusedError:
+        logger.warn(f"Put Image: Connection Error. Meaning {URL} could not be accessed")
+        return None
+    except OSError:
+        logger.warn("Put Image: OSError. Network likely unreachable")
 
 def getPrinterStatus(ip:str, api_key:str) -> dict:
     """Get the printer status from the PrusaLink webserver, possible statuses can be found here: https://github.com/prusa3d/Prusa-Link-Web/blob/master/spec/openapi.yaml#L1269
@@ -100,6 +105,8 @@ def getPrinterStatus(ip:str, api_key:str) -> dict:
     except requests.exceptions.ConnectTimeout:
         logger.warn(f"Printer status check timeout. IP: {ip}")
         return None
+    except OSError:
+        logger.warn("Get Printer Status: OSError. Network likely unreachable")
 
 
 def captureImage(camera_id:int|str, fingerprint:str, imgs_folder:pathlib.Path, rotation:int) -> pathlib.Path:
@@ -116,31 +123,28 @@ def captureImage(camera_id:int|str, fingerprint:str, imgs_folder:pathlib.Path, r
     """
 
     #Capture image
-    cap = cv2.VideoCapture(camera_id)
-    if cap.isOpened():
-        ret, frame = cap.read()
-        if ret == True:
-            file_name = f"{fingerprint}_{datetime.datetime.now().strftime(TIMESTAMP_FMT)}.jpg"
-            img_path = imgs_folder/file_name
+    try:
+        cap = cv2.VideoCapture(camera_id)
+        if cap.isOpened():
+            ret, frame = cap.read()
+            if ret == True:
+                file_name = f"{fingerprint}_{datetime.datetime.now().strftime(TIMESTAMP_FMT)}.jpg"
+                img_path = imgs_folder/file_name
 
-            #Rotate if desired
-            if rotation is not None:
-                frame = cv2.rotate(frame, rotation)
-            
-            cv2.imwrite(img_path, frame)
-        logger.debug(f"Saved image {img_path.name}")
-    else:
-        logger.warn(f"Unable to open video capture {camera_id}")
-        
+                #Rotate if desired
+                if rotation is not None:
+                    frame = cv2.rotate(frame, rotation)
+                
+                cv2.imwrite(img_path, frame)
+            logger.debug(f"Saved image {img_path.name}")
+            cap.release()
+            return img_path
+        else:
+            logger.warn(f"Unable to open video capture {camera_id}")
 
-    try: 
-        cap.release()
-    except:
-        pass
-
+    except UnboundLocalError: # Cant 
         return None
 
-    return img_path
 
 def selectCamera(name:str) -> int:
     """Run at the beginning of everytime the script is run to select the correct camera
