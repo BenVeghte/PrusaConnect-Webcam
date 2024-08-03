@@ -31,7 +31,7 @@ Windows is also supported
     ```
     cd PrusaConnect-Webcam
     python3.12 -m venv venv
-    venv/bin/activate
+    venv\Scripts\activate
     ```
     Depending on how you installed Python on windows, the command might be just `python` as opposed to `python3.12`. Verify you are using the correct version with `python --version`
 
