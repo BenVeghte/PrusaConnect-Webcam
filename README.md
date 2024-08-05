@@ -4,26 +4,48 @@ Program to use a USB connected webcam with PrusaConnect's camera feature. If you
 
 ## Usage
 
-All commands are tested on a Raspberry Pi 4 (4GB RAM) with 64-bit Ubuntu 24.04 LTS (Noble Numbat) Server for an OS.
+All commands are tested on a Raspberry Pi 4 (4GB RAM) with 64-bit Ubuntu 24.04 LTS (Noble Numbat) Server for an OS. 
+
+Windows is also supported
 
 - **Install required command line tools**
+
+    *Linux Only*:
     `sudo apt-get install python3.12 python3.12-venv git ffmpeg libsm6 libxext6 -y`
 
 - **Clone repository**
+
+    *Both*:
     `git clone https://github.com/BenVeghte/PrusaConnect-Webcam.git`
 
 - **Setup virtual environment**
+
+    *Linux*:
     ```bash
     cd PrusaConnect-Webcam
     python3.12 -m venv venv
     source venv/bin/activate
     ```
 
+    *Windows*:
+    ```
+    cd PrusaConnect-Webcam
+    python3.12 -m venv venv
+    venv\Scripts\activate
+    ```
+    Depending on how you installed Python on windows, the command might be just `python` as opposed to `python3.12`. Verify you are using the correct version with `python --version`
+
+
 - **Install required python packages** 
  
+    *Linux*:
     `pip install -r requirements.txt`
 
-- **Get configuration info** for printers
+    *Windows*:
+    `pip install -r requirements_windows.txt`
+
+
+- **Get configuration info**
 
     1. Camera Token can be found or created by clicking on your desired printer in PrusaLink, then the Camera tab, click add Camera (Other) and then copy the token.
         
